@@ -2,7 +2,7 @@ package nvnt.pedidos;
 
 import org.apache.log4j.Logger;
 
-//TODO: Mejorar el orden de try-catch
+
 public class OperacionesDisponibles {
 
 	public static final Logger LOGGER = Logger
@@ -14,24 +14,28 @@ public class OperacionesDisponibles {
 		this.pedidosDAO = dao;
 	}
 
-	/*
-	 * Crear pedidos solo agrega a la base de datos, no a la cache
-	 */
+	/*Cuando estoy creando, me interesa más si falla la bd que la cache*/
 	public void crearPedidos(Pedido pedido) throws DBException {
 		try {
 			pedidosDAO.insertOrUpdate(pedido);
 		} catch (DBException e) {
-			LOGGER.error(e);
 			throw e;
+		}
+		try {
+			BumexMemCachedProxy.set(pedido.getId(), pedido);
+		} catch (CacheException e) {
+			// cache desactualizada
+			LOGGER.error(e);
 		}
 
 	}
 	
-
+	/*Cuando estoy modificando, me interesa que la cache esté actualizada
+	 * y guarde la nueva version, por eso elimino la actual.*/
 	public void modificarPedidos(Pedido pedido) throws DBException,
 			CacheException {
 		try {
-			BumexMemCachedProxy.set(pedido.getId(), pedido);
+			BumexMemCachedProxy.delete(pedido.getId());
 		} catch (CacheException e) {
 			// cache desactualizada
 			LOGGER.error(e);
@@ -42,9 +46,15 @@ public class OperacionesDisponibles {
 			LOGGER.error(e);
 			throw e;
 		}
+		try {
+			BumexMemCachedProxy.set(pedido.getId(),pedido);
+		} catch (CacheException e) {
+			// cache desactualizada
+			LOGGER.error(e);
+		}
 
 	}
-
+	/*confio en que tengo datos actualizados en la cache*/
 	public Pedido buscarPedidosPorId(Integer id) throws DBException {
 		Pedido pedido = null;
 
@@ -52,12 +62,15 @@ public class OperacionesDisponibles {
 			pedido = BumexMemCachedProxy.get(id);
 		} catch (CacheException e) {
 			LOGGER.debug(e);
+		}
+		if(pedido == null){
 			try {
 				pedido = pedidosDAO.select(id);
 			} catch (DBException dbException) {
 				throw dbException;
 			}
 		}
+		
 		return pedido;
 	}
 
@@ -66,12 +79,11 @@ public class OperacionesDisponibles {
 			BumexMemCachedProxy.delete(pedido.getId());
 		} catch (CacheException e) {
 			LOGGER.debug(e);
-			
-			try {
-				pedidosDAO.delete(pedido);
-			} catch (DBException dbException) {
-				throw dbException;
-			}
+		}
+		try {
+			pedidosDAO.delete(pedido);
+		} catch (DBException dbException) {
+			throw dbException;
 		}
 	}
 }

@@ -1,9 +1,10 @@
 package nvnt.pedidos;
 /*
- * La manera de implementar un singleton, según Joshua Bloch en Effective Java
+ * Supongo que al singleton se lo implementó como un Enum, 
+ * y que tiene alguna política de optimización.
  */
 public enum BumexMemcached {
-	CACHE;
+	INSTANCE;
 	public void set(String key, Object value){
 		System.out.println(key+":"+value);
 	}

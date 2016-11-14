@@ -3,18 +3,15 @@ package nvnt.pedidos;
 public class BumexMemCachedProxy {
 
 	/*
-	 * Utilizo una clase proxy para no ensuciar la implementacion principal.
-	 * 
-	 * No es recomendable NUNCA la utilizacion de instanceof ni casteos, mas que en casos extremos
-	 * como éste, donde es necesario utilizar un caché ya implementado.
-	 * 
+	 * Utilizo una clase proxy para no ensuciar la implementacion principal con casteos
+	 *  
 	 * */
 	public static void set(Integer key, Pedido value) throws CacheException{
-		BumexMemcached.CACHE.set(key.toString(), value);
+		BumexMemcached.INSTANCE.set(key.toString(), value);
 	}
 	
 	public static Pedido get(Integer key) throws CacheException {
-		Object elem = BumexMemcached.CACHE.get(key.toString());
+		Object elem = BumexMemcached.INSTANCE.get(key.toString());
 		
 		Pedido pedido;
 		
@@ -27,6 +24,6 @@ public class BumexMemCachedProxy {
 	}
 
 	public static void delete(Integer key) throws CacheException{
-		BumexMemcached.CACHE.delete(key.toString());
+		BumexMemcached.INSTANCE.delete(key.toString());
 	}
 }
